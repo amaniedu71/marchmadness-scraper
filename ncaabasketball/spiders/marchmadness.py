@@ -16,21 +16,23 @@ class MarchMadness(scrapy.Spider):
 
     def parse(self, response):
         games = response.css('div.gamePod-type-game')
+
         for game in games:
-            if game is not None: 
+            game_name = game.css('span.game-round')
+            if game is not None and len(game_name) != 0 : # if either of this is true, ignore
                 yield {
-                    'game_date': self.date.strftime('/%m/%d/%Y'), # 'month/day/year'
-                    'game_name': game.css('span.game-round::text').get(),
+                    'game_date': self.date.strftime('%m/%d/%Y'), # 'month/day/year'
+                    'game_name': game_name.css('::text').get(),
+                    'game_status': game.css('div.gamePod-status::text').get(),
                     'game_video': game.css('a.gamePod-link::attr(href)').get(),
                     'winner_name': game.css('li.winner .gamePod-game-team-name::text').get(), # 'li.winner' is the winning team
-                    'second_name': game.css('li.winner+li .gamePod-game-team-name::text').get(), #'li.winner+li' is the losing team
+                    'second_name': game.css('li:not(winner) .gamePod-game-team-name::text').get(), #'li:not(winner)' is the losing team
                     'winner_rank': game.css('li.winner .gamePod-game-team-rank::text').get(),
-                    'second_rank':  game.css('li.winner+li .gamePod-game-team-rank::text').get(),
+                    'second_rank':  game.css('li:not(winner) .gamePod-game-team-rank::text').get(),
                     'winner_score': game.css('li.winner .gamePod-game-team-score::text').get(),
-                    'second_score': game.css('li.winner+li .gamePod-game-team-score::text').get(),
+                    'second_score': game.css('li:not(winner) .gamePod-game-team-score::text').get(),
                     'winner_logo': game.css('li.winner .gamePod-game-team-logo::attr(src)').get(),
-                    'second_logo': game.css('li.winner+li .gamePod-game-team-logo::attr(src)').get()
-
+                    'second_logo': game.css('li:not(winner) .gamePod-game-team-logo::attr(src)').get()
                 }
         if self.stop_condition>0:
             self.date += timedelta(days=1) # add day to date obj
